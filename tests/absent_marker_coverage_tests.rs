@@ -119,6 +119,11 @@ const CANNOT_REPORT_A_MISSING_NAME: &[&str] = &[
     "guix",
     "emerge",
     "eopkg",
+    // moss's only absent-name signal would be `moss search`, and moss 0.1.0 has no `search`
+    // subcommand at all (`error: unrecognized subcommand 'search'`, probed serpentos/base
+    // 2026-09-03); `moss install` 404s against the live CDN, so there is no real output from
+    // which to derive a marker. In the list rather than a fabricated marker.
+    "moss",
     "mas",
     "macports",
 ];

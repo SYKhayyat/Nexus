@@ -76,6 +76,17 @@ pub const UNPROVEN: &[(&str, &str)] = &[
          neither getsolus/solus:latest nor solus/solus:latest has a manifest. The only entry \
          here whose re-derivation changed nothing.",
     ),
+    (
+        "moss",
+        "AerynOS's native manager. The old reason here would have been \"no AerynOS container \
+         exists\" — probed 2026-09-03, that is false: `serpentos/base` runs and ships moss \
+         0.1.0. The wall is inside it: `moss remove` answers `Error: remove: Not yet \
+         implemented`, and `moss install` 404s against the live cdn.aerynos.dev pool, so no \
+         install → list → remove round trip can complete on a real image. The committed \
+         fixture was written from AerynOS's documentation (2021-11-23) rather than captured, \
+         and is replaced in `builtin_backends.toml` with bytes captured from `serpentos/base` \
+         the same day.",
+    ),
     // `guix` was here, through three successively less wrong reasons: first "no published base
     // image, and Guix needs a running guix-daemon" (both halves false — metacall/guix:latest is
     // published and the daemon runs fine), then "the manager works but SHALL has not driven it".

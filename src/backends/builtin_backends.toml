@@ -840,9 +840,13 @@ expect = [
 # Needs root and is exclusive (moss holds its own store lock). Linux only: it requires
 # renameat2(2) and namespace isolation that are not available elsewhere.
 #
-# The installed listing is a three-column shape: `name (version) - description`. The
-# parser keeps both identity and version, while the description stays out of the package name.
-# The fixture is the example output published in AerynOS's package-manager documentation.
+# The installed listing is `name version - description`, padded to columns; the parser keeps
+# both identity and version, while the description stays out of the package name. The fixture
+# was captured from `serpentos/base` (2026-09-03) with ANSI colour codes stripped, the same
+# day the earlier fixture — written from AerynOS documentation (2021-11-23) in a shape the
+# real tool does not print — was replaced. `moss remove` is unimplemented in moss 0.1.0 and
+# `moss install` 404s against the live CDN, so the backend has no real lifecycle anywhere;
+# see `no_lifecycle_reason` in the container harness and `UNPROVEN` in proving.rs.
 [[backend]]
 name = "moss"
 os = "linux"
@@ -851,23 +855,29 @@ remove_args = ["remove"]
 list_args = ["list", "installed"]
 search_args = ["search"]
 upgrade_args = ["sync", "--update"]
-parser = { format = "regex", pattern = '^([^ ]+) \(([^)]+)\) - .*$', name_group = 1, version_group = 2 }
-search_parser = { format = "regex", pattern = '^([^ ]+) \(([^)]+)\) - .*$', name_group = 1, version_group = 2 }
+parser = { format = "regex", pattern = '^([^ ]+)\s+([^ ]+) - .*$', name_group = 1, version_group = 2 }
+search_parser = { format = "regex", pattern = '^([^ ]+)\s+([^ ]+) - .*$', name_group = 1, version_group = 2 }
 needs_root = true
 
 [backend.fixture]
-source = "AerynOS documentation, `It All Depends` (2021-11-23), example `list installed` output"
+source = "captured from serpentos/base (AerynOS), `moss list installed`, 2026-09-03; ANSI colour codes stripped"
 list = '''
-file (5.4) - File type identification utility
-file-32bit (5.4) - Provides 32-bit runtime libraries for file
-file-32bit-devel (5.4) - Provides development files for file
-file-devel (5.4) - Development files for file
-nano (5.5) - GNU Text Editor
+acl               2.3.1-2 - Access control list utilities
+attr              2.5.1-2 - Commands for Manipulating Extended Attributes
+bash             5.2.15-5 - GNU Bourne-Again Shell
+bash-completion    2.11-2 - Programmable completion functions for bash
+brotli            1.0.9-3 - Generic-purpose lossless compression algorithm
+coreutils           9.3-4 - Basic file, shell, and text manipulation utilities
+curl              8.5.0-8 - A utility for fetching files from remote servers
+glibc              2.37-6 - The GNU libc libraries
 '''
 expect = [
-    "file@5.4",
-    "file-32bit@5.4",
-    "file-32bit-devel@5.4",
-    "file-devel@5.4",
-    "nano@5.5",
+    "acl@2.3.1-2",
+    "attr@2.5.1-2",
+    "bash@5.2.15-5",
+    "bash-completion@2.11-2",
+    "brotli@1.0.9-3",
+    "coreutils@9.3-4",
+    "curl@8.5.0-8",
+    "glibc@2.37-6",
 ]

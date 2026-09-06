@@ -120,6 +120,7 @@ const UNIVERSE: &[&str] = &[
     "macports",
     "mise",
     "mix",
+    "moss",
     "nimble",
     "nix",
     "nixos",
@@ -220,7 +221,14 @@ fn nowhere() -> Vec<Nowhere> {
 // remove, machine still buildable — and that run found four defects the hermetic layers had all
 // passed. So the number buys a backend that is measured but not gated, and the debt is a NixOS
 // CI leg. Retire it by building one; do not retire it by deleting the row.
-const NOWHERE_CEILING: usize = 9;
+// Raised 9 -> 10 on 2026-09-04 for `moss`, the second entry ever to raise it. `moss` landed in
+// `builtin_backends.toml` (1224fba) with no canary and no reason, which is Q4 item 4 happening —
+// a new backend added while the current set still passes. It stays in the ceiling because the
+// alternative is a fake canary: probed 2026-09-03 on `serpentos/base`, `moss remove` answers
+// `Not yet implemented` and `moss install` 404s against the live CDN, so no real install → list
+// → remove can complete even on AerynOS's own image. Retire it by fixing moss 0.1.0's remove
+// verb and adding a canary row; do not retire it by deleting the row.
+const NOWHERE_CEILING: usize = 10;
 
 fn covered_somewhere() -> BTreeSet<String> {
     let win = read("scripts/integration-windows.sh");

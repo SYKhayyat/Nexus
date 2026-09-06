@@ -1557,6 +1557,12 @@ no_lifecycle_reason() {
         # price of closing it; `scripts/nix-validate.sh` is the automated half.
         nixos)    echo "needs the image to BE NixOS (/etc/nixos + nixos-rebuild), and no image in this matrix is — nixos/nix was probed and is the Nix manager on a minimal base, not NixOS; scripts/nix-validate.sh evaluates every generated module against real nixpkgs instead" ;;
         eopkg)    echo "Solus's native manager, and there is no Solus image in this matrix — argv-tested only" ;;
+        # AerynOS's native manager. Not "no AerynOS container exists" — that stopped being true
+        # when `serpentos/base` appeared — but a measured wall inside it, probed 2026-09-03:
+        # `moss remove` answers `Error: remove: Not yet implemented`, and `moss install` 404s
+        # against the live cdn.aerynos.dev pool. No install → list → remove round trip can
+        # complete, which is the Q17 bar for a reason rather than a canary.
+        moss)     echo "AerynOS's native manager — moss 0.1.0 cannot complete a lifecycle even on a real AerynOS image: \`remove\` is unimplemented and \`install\` 404s against cdn.aerynos.dev (probed serpentos/base 2026-09-03) — argv-tested only" ;;
         slackpkg) echo "Slackware's native manager, driven for real on the slackware image and absent from this one" ;;
         guix)     echo "GNU Guix's own manager, driven for real on the guix image and absent from this one" ;;
         pkg)      echo "FreeBSD's native manager, and there is no FreeBSD host anywhere in this project's CI — argv-tested only" ;;
