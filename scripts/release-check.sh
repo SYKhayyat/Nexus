@@ -149,11 +149,31 @@ else fail "harness mutation budget EXCEEDED — checks that examine nothing"; fi
 # And the OTHER harness (G-4). CI mutation-tests both; this script tested one, and the parity
 # gate reported ok because it compared basenames. The four-distro
 # harness runs on every push against 136 checks and was measured in exactly one place.
-# Needs no Docker: the harness is shell, and the point is to run it against a stub.
-echo "-> scripts/harness-mutation-test.sh docker/integration/run-in-container.sh --check"
-if bash scripts/harness-mutation-test.sh docker/integration/run-in-container.sh --check apt jq; then
-    pass "container harness mutation budget"
-else fail "container harness mutation budget EXCEEDED — checks that examine nothing"; fi
+#
+# Run INSIDE the container, the way CI measures it, when one is available. The mutation
+# budgets for this harness are the runner's numbers — a run on the bare host aborts the
+# harness at the first unguarded container-only variable (f48567e5, issue #50) and, once
+# that is fixed, measures a genuinely different machine: the floors sit ~2 checks above what
+# a host without the image's packages can catch. Enforcing the runner's floor on the host is
+# "a gate that fails for being wrong about the machine", which this file's sibling
+# (harness-mutation-test.sh) says in its own words. The host-side invocation is the fallback
+# when no Docker daemon or image is present.
+if command -v docker >/dev/null 2>&1 && docker image inspect shall-it-ubuntu >/dev/null 2>&1; then
+    echo "-> scripts/harness-mutation-test.sh docker/integration/run-in-container.sh --check (in shall-it-ubuntu)"
+    if docker run --rm --entrypoint sh \
+            -v "$REPO_ROOT/docker/integration/run-in-container.sh:/src/docker/integration/run-in-container.sh:ro" \
+            -v "$REPO_ROOT/scripts/lifecycle-floor.txt:/src/scripts/lifecycle-floor.txt:ro" \
+            -v "$REPO_ROOT/scripts/harness-mutation-test.sh:/src/scripts/harness-mutation-test.sh:ro" \
+            shall-it-ubuntu -c \
+            "cd /src && bash scripts/harness-mutation-test.sh docker/integration/run-in-container.sh --check apt jq"; then
+        pass "container harness mutation budget"
+    else fail "container harness mutation budget EXCEEDED — checks that examine nothing"; fi
+else
+    echo "-> scripts/harness-mutation-test.sh docker/integration/run-in-container.sh --check (host, no shall-it-ubuntu)"
+    if bash scripts/harness-mutation-test.sh docker/integration/run-in-container.sh --check apt jq; then
+        pass "container harness mutation budget"
+    else fail "container harness mutation budget EXCEEDED — checks that examine nothing"; fi
+fi
 
 # ------------------------------------------------------------------ 2. integration
 if [ "$SKIP_DOCKER" = "1" ]; then

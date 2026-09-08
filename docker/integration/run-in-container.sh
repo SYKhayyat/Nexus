@@ -823,7 +823,7 @@ $BACKEND manual set=$MANUAL  $BACKEND installed=$INSTALLED_TOTAL"
     # of anybody's database. Elsewhere the same name under two backends is two real installs —
     # `npm:jq` and `pacman:jq` are different files and removing one leaves the other — so this
     # would be a false alarm rather than a check.
-    if [ "$SHALL_IT_IMAGE" = arch ]; then
+    if [ "${SHALL_IT_IMAGE:-}" = arch ]; then
         DUPES=$(sed -n 's/^[a-z][a-z0-9-]*:\([^ @]*\).*/\1/p' "$ADOPTED_FILE" 2>/dev/null \
             | sort | uniq -d | tr '\n' ' ')
         ok "adopt takes a package once, not once per client of the same database (got: ${DUPES:-none})" \

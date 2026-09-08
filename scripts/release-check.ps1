@@ -176,10 +176,32 @@ if ($null -eq $bashForMutation) {
     # And the OTHER harness (G-4). CI mutation-tests both; this script tested one, and the
     # parity gate reported ok because it compared basenames. The four-distro
     # harness runs on every push against 136 checks and was measured in exactly one place.
-    # Needs no Docker: the harness is shell, and the point is to run it against a stub.
-    Write-Host "-> scripts/harness-mutation-test.sh docker/integration/run-in-container.sh --check"
-    & $bashForMutation "scripts/harness-mutation-test.sh" "docker/integration/run-in-container.sh" "--check" "apt" "jq"
-    if ($LASTEXITCODE -eq 0) { Pass "container harness mutation budget" } else { Fail "container harness mutation budget EXCEEDED - checks that examine nothing" }
+    #
+    # Run INSIDE the container when one is reachable (through WSL, which this script already
+    # uses for unix-check). The mutation budgets for this harness are the runner's numbers; a
+    # host-side run aborts the harness at the first unguarded container-only variable
+    # (f48567e5, issue #50) and, once that is fixed, measures a genuinely different machine,
+    # so the runner's floor does not fit it. The host-side invocation is the fallback when no
+    # Linux container is reachable.
+    $dockerCmd = Get-Command wsl -ErrorAction SilentlyContinue
+    $imageReady = $false
+    if ($null -ne $dockerCmd) {
+        wsl -- docker image inspect shall-it-ubuntu *> $null
+        $imageReady = ($LASTEXITCODE -eq 0)
+    }
+    if ($imageReady) {
+        Write-Host "-> scripts/harness-mutation-test.sh docker/integration/run-in-container.sh --check (in shall-it-ubuntu)"
+        wsl -- docker run --rm --entrypoint sh `
+            -v "$RepoRoot/docker/integration/run-in-container.sh:/src/docker/integration/run-in-container.sh:ro" `
+            -v "$RepoRoot/scripts/lifecycle-floor.txt:/src/scripts/lifecycle-floor.txt:ro" `
+            -v "$RepoRoot/scripts/harness-mutation-test.sh:/src/scripts/harness-mutation-test.sh:ro" `
+            shall-it-ubuntu -c "cd /src && bash scripts/harness-mutation-test.sh docker/integration/run-in-container.sh --check apt jq"
+        if ($LASTEXITCODE -eq 0) { Pass "container harness mutation budget" } else { Fail "container harness mutation budget EXCEEDED - checks that examine nothing" }
+    } else {
+        Write-Host "-> scripts/harness-mutation-test.sh docker/integration/run-in-container.sh --check (host, no shall-it-ubuntu)"
+        & $bashForMutation "scripts/harness-mutation-test.sh" "docker/integration/run-in-container.sh" "--check" "apt" "jq"
+        if ($LASTEXITCODE -eq 0) { Pass "container harness mutation budget" } else { Fail "container harness mutation budget EXCEEDED - checks that examine nothing" }
+    }
 }
 
 # ------------------------------------------------------------------ 2. integration
