@@ -8,6 +8,16 @@
 # the other images do not cover.
 FROM ghcr.io/void-linux/void-linux:latest-full-x86_64
 ENV SHALL_IT_IMAGE=void
+# **The base image's baked-in mirror is broken.** `/usr/share/xbps.d/00-repository-main.conf`
+# points at `alpha.de.repo.voidlinux.org`, which has answered every build since 2026-09-03
+# with `SSL certificate subject doesn't match host alpha.de.repo.voidlinux.org` — so the first
+# `xbps-install` dies at reposync and `curl` is reported "not found in repository pool" even
+# though the package exists on every healthy mirror. Override it before any install; `/etc/`
+# wins over `/usr/share/` in xbps's config layering. `repo-default.voidlinux.org` is Void's
+# geo-DNS round-robin across the healthy mirrors.
+RUN mkdir -p /etc/xbps.d \
+    && printf 'repository=https://repo-default.voidlinux.org/current\n' \
+        > /etc/xbps.d/00-repository-main.conf
 # xbps insists on updating itself before anything else; without this first line the second
 # `xbps-install` aborts with "xbps needs to be updated" and the image build fails in a way that
 # reads like a network problem.

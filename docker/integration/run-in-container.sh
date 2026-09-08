@@ -2292,7 +2292,18 @@ ok "path prints the config repo" lx path
 ok "path --explain says which source won" lx path --explain
 ok "config show prints the active configuration" lx config show
 ok "policy checks the desired state against [guard]" lx policy
-ok "check conflicts reports cross-backend conflicts" lx check conflicts
+# `check conflicts` exits 2 by design (U21) when a cross-backend provider collision exists,
+# and the tools image ships one on purpose: conda's base environment carries `python` beside
+# apt's. The assertion is that the conflict is REPORTED — either exit code carries the report;
+# silence (rc other than 0/2) still fails. Twin of the block in integration-windows.sh.
+_rc=0
+lx check conflicts >/tmp/it.out 2>&1 || _rc=$?
+if [ "$_rc" -eq 0 ] || { [ "$_rc" -eq 2 ] && grep -q "MULTIPLE PROVIDERS" /tmp/it.out; }; then
+    PASS=$((PASS + 1)); echo "  PASS  check conflicts reports cross-backend conflicts"
+else
+    FAILC=$((FAILC + 1)); FAILED_NAMES="$FAILED_NAMES\n    - check conflicts (rc=$_rc)"
+    echo "  FAIL  check conflicts (rc=$_rc)"; excerpt /tmp/it.out 4
+fi
 # With no event hooks declared, approvals is clean and exits 0 (not 2).
 ok "check approvals is clean with no hooks" lx check approvals
 # `adapters` (S78) — the eight extension surfaces. The container starts with no `adapters/`
