@@ -1,3 +1,4 @@
+#!/bin/sh
 set -u
 LOG=/mnt/c/Users/Administrator/Videos/Nexus/shall-scratch/emerge-probe.log
 docker run --rm --entrypoint sh gentoo/stage3:latest -c '

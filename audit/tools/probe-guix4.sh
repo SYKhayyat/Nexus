@@ -1,3 +1,4 @@
+#!/bin/sh
 set -u
 LOG=/mnt/c/Users/Administrator/Videos/Nexus/shall-scratch/guix-probe4.log
 docker run --rm --security-opt seccomp=unconfined --entrypoint sh metacall/guix:latest -c '

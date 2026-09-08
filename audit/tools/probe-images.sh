@@ -1,3 +1,4 @@
+#!/bin/sh
 set -u
 for img in \
   getsolus/solus:latest \

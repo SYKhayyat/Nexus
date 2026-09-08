@@ -1,3 +1,4 @@
+#!/bin/sh
 set -u
 cd /mnt/c/Users/Administrator/Videos/Nexus/linix
 docker build -f docker/integration/Dockerfile.ubuntu -t shall-it-ubuntu . \

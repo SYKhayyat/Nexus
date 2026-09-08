@@ -1,3 +1,4 @@
+#!/bin/sh
 c=$(docker ps -q --filter ancestor=shall-it-ubuntu | head -1)
 [ -n "$c" ] || { echo "no ubuntu container running"; exit 0; }
 echo "container: $c"

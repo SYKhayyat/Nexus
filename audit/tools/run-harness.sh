@@ -1,3 +1,4 @@
+#!/bin/sh
 set -u
 # run-harness.sh <image-tag> <backend> <package> [extra docker args...]
 #

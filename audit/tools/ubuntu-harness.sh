@@ -1,3 +1,4 @@
+#!/bin/sh
 set -u
 cd /mnt/c/Users/Administrator/Videos/Nexus/linix
 OUT=/mnt/c/Users/Administrator/Videos/Nexus/shall-scratch/ubuntu-harness.log

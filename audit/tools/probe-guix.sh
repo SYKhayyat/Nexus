@@ -1,3 +1,4 @@
+#!/bin/sh
 set -u
 LOG=/mnt/c/Users/Administrator/Videos/Nexus/shall-scratch/guix-probe.log
 {

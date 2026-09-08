@@ -1,3 +1,4 @@
+#!/bin/sh
 set -u
 # Is `uninstall jq` -> `yay:jq` a resolution-order question, or a bug in yay's removal argv?
 # Measured rather than reasoned about — the harness only showed the symptom.
