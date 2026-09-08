@@ -38,6 +38,19 @@ RUN for p in php-cli composer golang-go opam ocaml-nox lua5.4 luarocks nim \
              emacs-nox flatpak dotnet8; do \
         apt-get install -y --no-install-recommends "$p" || echo "SKIP unavailable apt pkg: $p"; \
     done; rm -rf /var/lib/apt/lists/*
+# The composer backend's list verb is `composer global show --format=json`, which errors with
+# "Composer could not find a composer.json file" until a global project exists — so `check
+# health` marks composer CRITICAL and the whole leg fails at the health gate. Seed the empty
+# global project; `composer global show` then answers `[]` (issue #56).
+RUN mkdir -p /root/.config/composer \
+    && printf '{\n    "name": "shall/harness-global",\n    "description": "empty global project for the harness",\n    "require": {}\n}\n' \
+        > /root/.config/composer/composer.json
+# The mix backend's health probe reports degraded until Hex is installed (`mix local.hex
+# --force`) — which also makes the whole `check health` gate exit 2 (a degraded backend is
+# sickness, U21). The image ships elixir but never set up Hex, so mix was degraded from the
+# first health check of every tools run. Install it at build time; the harness then starts
+# from a clean bill of health.
+RUN mix local.hex --force
 
 # Every network install below goes through this. See `retry.sh` for why one attempt was the
 # wrong number: a best-effort install that fails once takes its manager's whole lifecycle out

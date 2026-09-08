@@ -401,10 +401,40 @@ fn parse_gem_list(output: &str) -> Vec<Package> {
 }
 
 /// Parses the JSON output of `composer global show --format=json`.
+///
+/// Composer answers two different shapes for the same question. With packages installed it
+/// emits `{"installed": [{name, version, ...}, ...]}`; with none it emits a bare `[]`. The
+/// populated shape is the one the reader below is named for; the empty one must read as *zero
+/// packages* rather than as a format change — a machine with nothing installed is the common
+/// case, and refusing it would drop composer out of the READY set and out of every real
+/// lifecycle, which is exactly what happened when the tools image seeded an empty global
+/// project and `check health` reported composer CRITICAL.
 fn parse_composer_json(output: &str) -> ParseResult {
     let Some(json) = crate::parsers::json_document(output) else {
         return crate::parsers::or_unrecognised_json("composer", vec![], None, "not JSON", output);
     };
+    // `composer global show --format=json` answers `[]` on an empty global project. A top-level
+    // array IS the empty installed list — composer's own empty answer, not a renamed schema.
+    if let Value::Array(items) = &json {
+        if items.is_empty() {
+            return crate::parsers::or_unrecognised_json(
+                "composer",
+                vec![],
+                Some(0),
+                "JSON with no `installed` array",
+                output,
+            );
+        }
+        // A non-empty top-level array is a shape composer has never produced; say so rather
+        // than guess a reading for it.
+        return crate::parsers::or_unrecognised_json(
+            "composer",
+            vec![],
+            Some(items.len()),
+            "composer answered a bare array that is not empty",
+            output,
+        );
+    }
     let installed = json.get("installed").and_then(|i| i.as_array());
     let mut res = vec![];
     for pkg in installed.into_iter().flatten() {
@@ -600,6 +630,26 @@ Done in 0.05s.
         assert_eq!(res.len(), 1);
         assert_eq!(res[0].name, "laravel/installer");
         assert_eq!(res[0].version, Some("v4.0.0".into()));
+    }
+
+    /// `composer global show --format=json` answers a bare `[]` on an empty global project —
+    /// its own documented empty answer, not a renamed schema. Reading it as *zero packages*
+    /// keeps composer in the READY set on a fresh machine; refusing it is the shape that made
+    /// `check health` report composer CRITICAL on the tools image's seeded empty project.
+    #[test]
+    fn composer_empty_global_project_reads_as_no_packages() {
+        let res = parse_composer_json("[]").expect("a bare empty array is composer's empty answer");
+        assert!(res.is_empty(), "no packages installed reads as none");
+    }
+
+    /// A NON-empty bare array is a shape composer has never produced. Refuse it by name rather
+    /// than reading it — the same direction every other JSON reader protects against a renamed
+    /// schema, because reading it as installed packages is how a machine gets "install
+    /// everything declared" on the next sync.
+    #[test]
+    fn composer_nonempty_bare_array_is_refused() {
+        let err = parse_composer_json(r#"[{"name": "x"}]"#).unwrap_err();
+        assert!(err.to_string().contains("not empty"), "{}", err);
     }
 }
 
